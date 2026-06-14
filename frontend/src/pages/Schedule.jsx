@@ -73,10 +73,10 @@ function getWeekDays() {
 export default function Schedule() {
   const queryClient = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery(
-    ["settings"],
-    () => api.getSettings().then((r) => r.data)
-  );
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => api.getSettings().then((r) => r.data),
+  });
 
   const [form, setForm] = useState(null);
 
@@ -90,10 +90,10 @@ export default function Schedule() {
     });
   }
 
-  const updateSettings = useMutation(
-    (data) => api.updateSettings(data).then((r) => r.data),
-    { onSuccess: () => queryClient.invalidateQueries(["settings"]) }
-  );
+  const updateSettings = useMutation({
+    mutationFn: (data) => api.updateSettings(data).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
+  });
 
   const fv = form ?? {
     shorts_per_day: 2,

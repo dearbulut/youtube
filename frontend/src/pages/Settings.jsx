@@ -39,22 +39,22 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("content");
 
-  const { data: settings, isLoading } = useQuery(
-    ["settings"],
-    () => api.getSettings().then((r) => r.data)
-  );
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => api.getSettings().then((r) => r.data),
+  });
 
-  const { data: ytStats } = useQuery(
-    ["youtube-stats"],
-    () => api.getYouTubeStats().then((r) => r.data),
-    { retry: false }
-  );
+  const { data: ytStats } = useQuery({
+    queryKey: ["youtube-stats"],
+    queryFn: () => api.getYouTubeStats().then((r) => r.data),
+    retry: false,
+  });
 
-  const { data: dashStats } = useQuery(
-    ["dashboard-stats"],
-    () => api.getDashboardStats().then((r) => r.data),
-    { enabled: activeTab === "budget" }
-  );
+  const { data: dashStats } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: () => api.getDashboardStats().then((r) => r.data),
+    enabled: activeTab === "budget",
+  });
 
   const [form, setForm] = useState(null);
   const [keyStatuses, setKeyStatuses] = useState({});
@@ -75,10 +75,10 @@ export default function Settings() {
     setKeyValues(initialKeys);
   }
 
-  const updateSettings = useMutation(
-    (data) => api.updateSettings(data).then((r) => r.data),
-    { onSuccess: () => queryClient.invalidateQueries(["settings"]) }
-  );
+  const updateSettings = useMutation({
+    mutationFn: (data) => api.updateSettings(data).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
+  });
 
   const fv = form ?? {
     niche: "nature_ambient",

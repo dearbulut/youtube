@@ -12,11 +12,11 @@ const PERMISSIONS = [
 export default function Connect() {
   const navigate = useNavigate();
 
-  const { data: authStatus, isLoading } = useQuery(
-    ["auth-status"],
-    () => api.getAuthStatus().then((r) => r.data),
-    { retry: false }
-  );
+  const { data: authStatus, isLoading } = useQuery({
+    queryKey: ["auth-status"],
+    queryFn: () => api.getAuthStatus().then((r) => r.data),
+    retry: false,
+  });
 
   useEffect(() => {
     if (authStatus?.connected || authStatus?.authenticated) {
