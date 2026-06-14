@@ -22,3 +22,23 @@ def get_db():
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
+    _migrate_columns()
+
+
+def _migrate_columns():
+    """Idempotent additive column migrations for SQLite."""
+    from sqlalchemy import text
+
+    migrations = [
+        ("user_settings", "manual_override", "BOOLEAN DEFAULT 0"),
+        ("videos", "niche_theme", "VARCHAR"),
+    ]
+    with engine.connect() as conn:
+        for table, column, col_def in migrations:
+            try:
+                conn.execute(
+                    text(f"ALTER TABLE {table} ADD COLUMN {column} {col_def}")
+                )
+                conn.commit()
+            except Exception:
+                pass  # column already exists

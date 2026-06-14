@@ -63,8 +63,26 @@ async def _cleanup_job():
     logger.info(f"Cleaned up {count} temp files")
 
 
+async def _run_optimization_job():
+    db = SessionLocal()
+    try:
+        from pipeline.optimizer import OptimizationEngine
+        result = OptimizationEngine().analyze_and_optimize(db)
+        logger.info(
+            "Optimization complete: %d decisions, %d videos analyzed",
+            len(result.get("decisions", [])),
+            result.get("videos_analyzed", 0),
+        )
+        # Apply any schedule changes the optimizer made
+        reschedule_all()
+    except Exception:
+        logger.exception("Optimization job failed")
+    finally:
+        db.close()
+
+
 def reschedule_all():
-    for job_id in ["short_1", "short_2", "long_video", "stats_sync", "cleanup"]:
+    for job_id in ["short_1", "short_2", "long_video", "stats_sync", "cleanup", "optimizer"]:
         try:
             scheduler.remove_job(job_id)
         except Exception:
@@ -100,6 +118,11 @@ def reschedule_all():
             _cleanup_job,
             CronTrigger(hour=4, minute=0),
             id="cleanup",
+        )
+        scheduler.add_job(
+            _run_optimization_job,
+            CronTrigger(hour=5, minute=0),
+            id="optimizer",
         )
     finally:
         db.close()

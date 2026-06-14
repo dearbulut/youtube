@@ -32,6 +32,7 @@ class UserSettings(Base):
     total_spent_usd = Column(Float, default=0.0)
     youtube_quota_used = Column(Integer, default=0)
     youtube_quota_date = Column(String, nullable=True)  # YYYY-MM-DD
+    manual_override = Column(Boolean, default=False)
 
 
 def get_or_create_settings(db: Session) -> UserSettings:

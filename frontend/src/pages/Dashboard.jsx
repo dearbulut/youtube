@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { api } from "../api/client";
+import StrategyCard from "../components/StrategyCard";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,12 @@ export default function Dashboard() {
   const viewsChart = useQuery({
     queryKey: ["views-chart"],
     queryFn: () => api.getViewsChart().then((r) => r.data),
+  });
+
+  const settingsQuery = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => api.getSettings().then((r) => r.data),
+    staleTime: 60000,
   });
 
   const stats = dashboardStats.data;
@@ -229,6 +236,9 @@ export default function Dashboard() {
           loading={dashboardStats.isLoading}
         />
       </div>
+
+      {/* ── Strategy card ─────────────────────────────────────────────────── */}
+      <StrategyCard settings={settingsQuery.data} />
 
       {/* ── Two column: recent uploads + next scheduled ───────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

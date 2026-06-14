@@ -10,6 +10,7 @@ class Video(Base):
     id = Column(Integer, primary_key=True)
     type = Column(String)
     status = Column(String, default="pending")
+    niche_theme = Column(String, nullable=True)
     title = Column(String, default="")
     description = Column(Text, default="")
     tags = Column(JSON, default=list)
@@ -51,3 +52,13 @@ class ChannelStats(Base):
     total_views = Column(Integer, default=0)
     video_count = Column(Integer, default=0)
     watch_hours = Column(Float, default=0.0)
+
+
+class OptimizationReport(Base):
+    __tablename__ = "optimization_reports"
+
+    id = Column(Integer, primary_key=True)
+    ran_at = Column(DateTime, default=datetime.utcnow)
+    videos_analyzed = Column(Integer, default=0)
+    decisions = Column(JSON, default=list)
+    current_strategy = Column(JSON, default=dict)

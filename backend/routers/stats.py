@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from config import settings as app_settings, encrypt_value, decrypt_value, NICHES, COST_CLAUDE_INPUT_PER_MTOK
 from database import get_db
-from models.video import Video, Job, ChannelStats
+from models.video import Video, Job, ChannelStats, OptimizationReport
 from models.settings import UserSettings, get_or_create_settings
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -185,6 +185,37 @@ def get_cost_breakdown(db: Session = Depends(get_db)):
         "this_week": round(float(this_week), 4),
         "daily_budget": user_settings.daily_budget_usd,
         "today_spend": round(float(today_spend), 4),
+    }
+
+
+@router.get("/optimization")
+def get_optimization(db: Session = Depends(get_db)):
+    reports = (
+        db.query(OptimizationReport)
+        .order_by(OptimizationReport.ran_at.desc())
+        .limit(5)
+        .all()
+    )
+    if not reports:
+        # Compute next 05:00 UTC run time
+        now = datetime.utcnow()
+        next_run = now.replace(hour=5, minute=0, second=0, microsecond=0)
+        if next_run <= now:
+            next_run += timedelta(days=1)
+        return {"reports": [], "next_run": next_run.isoformat() + "Z"}
+
+    return {
+        "reports": [
+            {
+                "id": r.id,
+                "ran_at": r.ran_at.isoformat() + "Z",
+                "videos_analyzed": r.videos_analyzed,
+                "decisions": r.decisions,
+                "current_strategy": r.current_strategy,
+            }
+            for r in reports
+        ],
+        "next_run": None,
     }
 
 

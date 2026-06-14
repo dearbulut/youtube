@@ -12,6 +12,16 @@ from models.settings import UserSettings, get_or_create_settings
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
+# Fields the optimizer manages automatically (read-only unless manual_override=True)
+AUTO_MANAGED_FIELDS = {
+    "shorts_per_day",
+    "long_video_interval_days",
+    "upload_time_shorts",
+    "upload_time_long",
+    "niche_theme",
+    "long_video_duration_minutes",
+}
+
 SCHEDULE_FIELDS = {
     "shorts_per_day",
     "upload_time_shorts",
@@ -52,6 +62,7 @@ def _settings_to_dict(s: UserSettings) -> Dict[str, Any]:
         "shorts_duration_seconds": s.shorts_duration_seconds,
         "long_video_interval_days": s.long_video_interval_days,
         "custom_niche_description": s.custom_niche_description,
+        "manual_override": s.manual_override,
     }
 
 
@@ -74,8 +85,17 @@ def update_settings(body: Dict[str, Any], db: Session = Depends(get_db)):
     s = get_or_create_settings(db)
     schedule_changed = False
 
+    # Process manual_override first so it gates the rest of the fields in this request
+    if "manual_override" in body and hasattr(s, "manual_override"):
+        s.manual_override = bool(body["manual_override"])
+
     for field, value in body.items():
         if not hasattr(s, field):
+            continue
+        if field == "manual_override":
+            continue  # already applied above
+        # Block auto-managed fields when optimizer is in control
+        if field in AUTO_MANAGED_FIELDS and not s.manual_override:
             continue
         if field in API_KEY_FIELDS:
             if value is None or value == MASK or value == "":

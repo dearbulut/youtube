@@ -7,6 +7,24 @@ from config import settings, NICHES, decrypt_value, COST_CLAUDE_INPUT_PER_MTOK, 
 from models.video import Video, Job
 from models.settings import get_or_create_settings
 
+YOUTUBE_CATEGORIES = {
+    "1": "Film & Animation",
+    "2": "Autos & Vehicles",
+    "10": "Music",
+    "15": "Pets & Animals",
+    "17": "Sports",
+    "19": "Travel & Events",
+    "20": "Gaming",
+    "22": "People & Blogs",
+    "23": "Comedy",
+    "24": "Entertainment",
+    "25": "News & Politics",
+    "26": "Howto & Style",
+    "27": "Education",
+    "28": "Science & Technology",
+    "29": "Nonprofits & Activism",
+}
+
 
 async def generate_idea(db, video_id: int, video_type: str) -> dict:
     video = db.query(Video).filter(Video.id == video_id).first()
@@ -44,10 +62,15 @@ async def generate_idea(db, video_id: int, video_type: str) -> dict:
 
         client = anthropic.Anthropic(api_key=api_key)
 
+        categories_list = ", ".join(f"{k}={v}" for k, v in YOUTUBE_CATEGORIES.items())
         system_prompt = (
             "You are a YouTube content strategist specializing in ambient and satisfying nature content. "
             "Generate unique video concepts that vary in location, season, time of day, weather, and texture. "
             "Never repeat themes from the provided existing_titles list. "
+            "Also select the most appropriate YouTube category_id for this content: "
+            "Nature/ambient/ASMR → 19 (Travel & Events) or 22 (People & Blogs); "
+            "Music-forward → 10 (Music); Educational/explainer → 27 (Education). "
+            f"Available categories: {categories_list}. "
             "Output ONLY valid JSON, no markdown."
         )
 
@@ -60,7 +83,8 @@ async def generate_idea(db, video_id: int, video_type: str) -> dict:
                 "- audio_description: describe the sounds and ambient audio\n"
                 "- title: catchy title (max 60 characters)\n"
                 "- hook: opening 3-second visual/audio description to hook viewers\n"
-                "- thumbnail_concept: thumbnail visual description (30 words)"
+                "- thumbnail_concept: thumbnail visual description (30 words)\n"
+                "- category_id: best YouTube category ID string for this content"
             )
         else:
             user_prompt = (
@@ -71,7 +95,8 @@ async def generate_idea(db, video_id: int, video_type: str) -> dict:
                 "- audio_style: music mood and ambient sounds suitable for 60 minutes\n"
                 "- title: descriptive title (max 70 characters, must include '1 Hour')\n"
                 "- thumbnail_concept: thumbnail visual description (30 words)\n"
-                "- tags: list of 15 relevant YouTube tags"
+                "- tags: list of 15 relevant YouTube tags\n"
+                "- category_id: best YouTube category ID string for this content"
             )
 
         response = client.messages.create(
@@ -91,6 +116,7 @@ async def generate_idea(db, video_id: int, video_type: str) -> dict:
 
         video.concept = concept
         video.cost_usd = (video.cost_usd or 0.0) + cost
+        video.niche_theme = user_settings.niche_theme
 
         job.status = "done"
         job.finished_at = datetime.utcnow()

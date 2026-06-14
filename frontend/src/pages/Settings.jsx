@@ -62,11 +62,12 @@ export default function Settings() {
 
   if (settings && form === null) {
     setForm({
-      niche: settings.niche ?? "nature_ambient",
-      custom_niche: settings.custom_niche ?? "",
+      niche: settings.niche_theme ?? settings.niche ?? "nature_ambient",
+      custom_niche: settings.custom_niche_description ?? settings.custom_niche ?? "",
       language: settings.language ?? "en",
-      shorts_duration: settings.shorts_duration ?? 45,
-      daily_budget: settings.daily_budget ?? 5,
+      shorts_duration: settings.shorts_duration_seconds ?? settings.shorts_duration ?? 45,
+      daily_budget: settings.daily_budget_usd ?? settings.daily_budget ?? 5,
+      manual_override: settings.manual_override ?? false,
     });
     const initialKeys = {};
     API_KEY_FIELDS.forEach(({ key }) => {
@@ -86,10 +87,18 @@ export default function Settings() {
     language: "en",
     shorts_duration: 45,
     daily_budget: 5,
+    manual_override: false,
   };
 
   const handleSave = () => {
-    const payload = { ...fv };
+    const payload = {
+      niche_theme: fv.niche,
+      custom_niche_description: fv.custom_niche,
+      language: fv.language,
+      shorts_duration_seconds: fv.shorts_duration,
+      daily_budget_usd: fv.daily_budget,
+      manual_override: fv.manual_override,
+    };
     API_KEY_FIELDS.forEach(({ key }) => {
       const val = keyValues[key];
       if (val && !val.startsWith("•")) {
@@ -163,6 +172,41 @@ export default function Settings() {
       {/* Tab: Content */}
       {activeTab === "content" && (
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
+          {/* Auto-optimize toggle */}
+          <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-800">
+            <div>
+              <p className="text-sm font-semibold text-white">
+                🤖 Auto-optimize strategy
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                When enabled, TubeAuto automatically adjusts schedule, niche, and
+                duration based on performance. Runs daily at 05:00 UTC.
+              </p>
+              {!fv.manual_override && (
+                <p className="text-xs text-yellow-400 mt-1">
+                  ⚠️ Niche, schedule, and duration fields are read-only while
+                  auto-optimization is active.
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() =>
+                setForm((f) => ({ ...f, manual_override: !f.manual_override }))
+              }
+              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none ${
+                !fv.manual_override ? "bg-green-600" : "bg-gray-600"
+              }`}
+              role="switch"
+              aria-checked={!fv.manual_override}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  !fv.manual_override ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
           {/* Niche selector */}
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-3">Niche</label>

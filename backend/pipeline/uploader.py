@@ -58,7 +58,7 @@ async def upload_to_youtube(db, video_id: int) -> str:
             "title": video.title,
             "description": description + "\n\n" + " ".join(hashtags),
             "tags": video.tags or [],
-            "categoryId": "22",
+            "categoryId": (video.concept or {}).get("category_id", "22"),
             "defaultLanguage": video.language or "en",
         },
         "status": {
