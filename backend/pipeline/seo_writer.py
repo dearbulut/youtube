@@ -66,7 +66,13 @@ async def write_seo(db, video_id: int) -> dict:
             messages=[{"role": "user", "content": user_prompt}],
         )
 
-        seo = json.loads(response.content[0].text)
+        raw = response.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]
+            if raw.startswith("json"): raw = raw[4:]
+            raw = raw.strip()
+        if raw.endswith("```"): raw = raw[:-3].strip()
+        seo = json.loads(raw)
 
         input_tokens = response.usage.input_tokens
         output_tokens = response.usage.output_tokens

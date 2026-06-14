@@ -129,9 +129,9 @@ async def retry_video(id: int, db: Session = Depends(get_db)):
     video_type = video.type
 
     if video_type == "short":
-        asyncio.create_task(run_short_pipeline(video_id))
+        asyncio.create_task(run_short_pipeline(video_id=video_id))
     else:
-        asyncio.create_task(run_long_pipeline(video_id))
+        asyncio.create_task(run_long_pipeline(video_id=video_id))
 
     return {"status": "retrying", "video_id": id}
 

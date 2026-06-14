@@ -51,15 +51,15 @@ async def upload_to_youtube(db, video_id: int) -> str:
         raise Exception("YouTube quota exhausted")
 
     # Step 7: Video metadata body
-    hashtags = video.hashtags or []
-    description = video.description or ""
+    hashtags = getattr(video, "hashtags", None) or []
+    description = getattr(video, "description", None) or ""
     body = {
         "snippet": {
             "title": video.title,
             "description": description + "\n\n" + " ".join(hashtags),
-            "tags": video.tags or [],
-            "categoryId": (video.concept or {}).get("category_id", "22"),
-            "defaultLanguage": video.language or "en",
+            "tags": [str(t).strip()[:30] for t in (getattr(video, "tags", None) or []) if str(t).strip()][:15],
+            "categoryId": (getattr(video, "concept", None) or {}).get("category_id", "22"),
+            "defaultLanguage": getattr(video, "language", None) or "en",
         },
         "status": {
             "privacyStatus": "public",

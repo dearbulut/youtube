@@ -158,25 +158,29 @@ async def generate_thumbnail(db, video_id: int) -> str:
         )
 
         response = await client.images.generate(
-            model="dall-e-3",
+            model="gpt-image-1",
             prompt=dalle_prompt,
-            size="1792x1024",
-            quality="hd",
+            size="1536x1024",
+            quality="high",
             n=1,
         )
 
-        image_url = response.data[0].url
-
-        async with httpx.AsyncClient(timeout=60.0) as dl_client:
-            img_resp = await dl_client.get(image_url)
-            img_resp.raise_for_status()
-            image_bytes = img_resp.content
+        import base64
+        b64 = getattr(response.data[0], 'b64_json', None)
+        if b64:
+            image_bytes = base64.b64decode(b64)
+        else:
+            image_url = response.data[0].url
+            async with httpx.AsyncClient(timeout=60.0) as dl_client:
+                img_resp = await dl_client.get(image_url)
+                img_resp.raise_for_status()
+                image_bytes = img_resp.content
 
         img = Image.open(io.BytesIO(image_bytes))
         img = img.resize((_THUMB_W, _THUMB_H), Image.LANCZOS)
         img = _add_text_overlay(img, title)
 
-        thumb_path = get_thumbnail_path(video_id)
+        thumb_path = get_thumbnail_path(f"thumb_{video_id}.jpg")
         os.makedirs(os.path.dirname(thumb_path), exist_ok=True)
         img.save(thumb_path, "JPEG", quality=95)
 

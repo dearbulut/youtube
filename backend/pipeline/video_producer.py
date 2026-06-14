@@ -112,7 +112,7 @@ async def _produce_short(db, video: Video, concept: dict) -> None:
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: fal_client.subscribe(
-                "fal-ai/kling-video/v2.1/standard/text-to-video",
+                "fal-ai/kling-video/v1.6/standard/text-to-video",
                 arguments={
                     "prompt": prompt,
                     "duration": "10",
@@ -178,7 +178,7 @@ async def _produce_long(db, video: Video, concept: dict) -> None:
             result = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda _p=prompt: fal_client.subscribe(
-                    "fal-ai/kling-video/v2.1/standard/text-to-video",
+                    "fal-ai/kling-video/v1.6/standard/text-to-video",
                     arguments={
                         "prompt": _p,
                         "duration": "10",

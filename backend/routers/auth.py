@@ -146,7 +146,7 @@ def callback(code: str, state: str = "", db: Session = Depends(get_db)):
     user_settings.youtube_channel_thumbnail = channel_thumbnail
     db.commit()
 
-    return RedirectResponse("http://localhost:3000/")
+    return RedirectResponse("https://tube.bulutworks.com/")
 
 
 @router.post("/logout")
