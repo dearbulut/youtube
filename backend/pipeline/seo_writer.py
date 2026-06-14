@@ -35,17 +35,39 @@ async def write_seo(db, video_id: int) -> dict:
         client = anthropic.Anthropic(api_key=api_key)
 
         system_prompt = (
-            "You are a YouTube SEO expert. Write metadata that maximizes discoverability. "
-            "Focus on search intent, emotional triggers (relaxing, sleep, study, focus, meditation). "
-            "Output ONLY valid JSON, no markdown."
+            "You are an elite YouTube SEO strategist specializing in viral ambient/nature content. "
+            "Your titles stop scrolling, your descriptions rank on search, your tags cover every angle.\n\n"
+            "TITLE RULES — all must apply:\n"
+            "• Use power words: Rare, Hypnotic, Satisfying, Incredible, Unreal, Secret, Hidden, Ancient\n"
+            "• Use curiosity/surprise: 'You've Never Seen...', 'Wait For It...', 'Nature Did This...'\n"
+            "• Include ONE emoji at the end (not middle)\n"
+            "• Must feel like something the viewer HAS to watch\n"
+            "• Examples: \"Frost Crystals Forming in Real Time Will Hypnotize You ❄️\"\n"
+            "           \"You've Never Heard Rain Like This Before 🌧️\"\n"
+            "           \"This Lava Meets Ocean at Midnight — Unreal 🌋\"\n\n"
+            "DESCRIPTION RULES:\n"
+            "• First 2 lines (before 'Show more') must be a HOOK — make the viewer feel the scene\n"
+            "• Then: use cases (sleep, study, focus, meditation, anxiety relief, work)\n"
+            "• Then: rich keyword paragraph, timestamps for long videos\n"
+            "• End with CTA: 'Subscribe for daily nature escapes'\n\n"
+            "Output ONLY valid JSON, no markdown, no code fences."
         )
 
         if video_type == "short":
             title_limit = "60 characters"
-            description_spec = "200-400 words with a strong hook, use cases, keywords, and a CTA"
+            description_spec = (
+                "150-300 words. First 2 lines = cinematic hook (describe the feeling/scene). "
+                "Then use cases. Then keyword paragraph. Then CTA."
+            )
+            tags_spec = "list of exactly 15 YouTube tags — mix broad (relaxing nature) and specific (frost crystal macro)"
         else:
-            title_limit = "70 characters"
-            description_spec = "800-1200 words with a strong hook, use cases (sleep/study/focus/meditation), rich keywords, and a CTA"
+            title_limit = "70 characters, must include '1 Hour'"
+            description_spec = (
+                "600-1000 words. First 2 lines = cinematic hook. "
+                "Then use cases (sleep/study/focus/meditation). "
+                "Then timestamps every 10 minutes. Then rich keyword paragraph. Then CTA."
+            )
+            tags_spec = "list of exactly 15 YouTube tags — mix broad (1 hour relaxing music) and ultra-specific"
 
         user_prompt = (
             f"Write YouTube metadata for this {video_type} video.\n"
@@ -53,9 +75,9 @@ async def write_seo(db, video_id: int) -> dict:
             f"Scene: {concept.get('scene', '')}\n"
             f"Language: {language}\n\n"
             f"Output a JSON object with exactly these keys:\n"
-            f"- title: SEO-optimized title (max {title_limit})\n"
+            f"- title: viral, scroll-stopping title (max {title_limit})\n"
             f"- description: {description_spec}\n"
-            f"- tags: list of up to 30 relevant YouTube tags\n"
+            f"- tags: {tags_spec}\n"
             f"- hashtags: list of exactly 3 hashtags (e.g. [\"#relaxing\", \"#ambient\", \"#sleep\"])"
         )
 

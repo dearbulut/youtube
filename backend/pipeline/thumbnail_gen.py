@@ -14,14 +14,12 @@ from utils.file_manager import get_thumbnail_path
 
 
 _FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-_FONT_SIZE = 48
+_FONT_SIZE = 72
 _MAX_LINES = 2
 _THUMB_W, _THUMB_H = 1280, 720
-_BOTTOM_BAND_FRACTION = 0.20
-_PILL_ALPHA = 160
-_PILL_PADDING_X = 24
-_PILL_PADDING_Y = 14
-_LINE_SPACING = 8
+_LINE_SPACING = 10
+_GRADIENT_HEIGHT_FRAC = 0.38
+_TEXT_BOTTOM_MARGIN_FRAC = 0.06
 
 
 def _load_font(size: int = _FONT_SIZE):
@@ -73,8 +71,17 @@ def _add_text_overlay(img: Image.Image, title: str) -> Image.Image:
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
+    # Dark gradient across the bottom third for text readability
+    grad_h = int(_THUMB_H * _GRADIENT_HEIGHT_FRAC)
+    for y in range(grad_h):
+        alpha = int(220 * (y / grad_h) ** 0.65)
+        draw.rectangle(
+            [0, _THUMB_H - grad_h + y, _THUMB_W, _THUMB_H - grad_h + y + 1],
+            fill=(0, 0, 0, alpha),
+        )
+
     font = _load_font(_FONT_SIZE)
-    max_text_width = int(_THUMB_W * 0.85)
+    max_text_width = int(_THUMB_W * 0.88)
     lines = _wrap_text(draw, title, font, max_text_width)
 
     line_heights = []
@@ -83,35 +90,20 @@ def _add_text_overlay(img: Image.Image, title: str) -> Image.Image:
         line_heights.append(bbox[3] - bbox[1])
 
     total_text_height = sum(line_heights) + _LINE_SPACING * (len(lines) - 1)
-    band_top = int(_THUMB_H * (1 - _BOTTOM_BAND_FRACTION))
-    band_center_y = band_top + (_THUMB_H - band_top) // 2
+    bottom_margin = int(_THUMB_H * _TEXT_BOTTOM_MARGIN_FRAC)
+    y_cursor = _THUMB_H - bottom_margin - total_text_height
 
-    pill_h = total_text_height + _PILL_PADDING_Y * 2
-    pill_top = band_center_y - pill_h // 2
-    pill_bottom = pill_top + pill_h
-
-    max_line_width = 0
-    for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font)
-        w = bbox[2] - bbox[0]
-        if w > max_line_width:
-            max_line_width = w
-
-    pill_left = (_THUMB_W - max_line_width) // 2 - _PILL_PADDING_X
-    pill_right = (_THUMB_W + max_line_width) // 2 + _PILL_PADDING_X
-
-    radius = min(pill_h // 2, 20)
-    draw.rounded_rectangle(
-        [pill_left, pill_top, pill_right, pill_bottom],
-        radius=radius,
-        fill=(0, 0, 0, _PILL_ALPHA),
-    )
-
-    y_cursor = pill_top + _PILL_PADDING_Y
     for i, line in enumerate(lines):
         bbox = draw.textbbox((0, 0), line, font=font)
         line_w = bbox[2] - bbox[0]
         x = (_THUMB_W - line_w) // 2
+
+        # Multi-directional shadow for bold readable text
+        shadow_offsets = [(-2, 2), (2, 2), (-2, -2), (2, -2), (0, 3), (0, -3), (3, 0), (-3, 0)]
+        for dx, dy in shadow_offsets:
+            draw.text((x + dx, y_cursor + dy), line, font=font, fill=(0, 0, 0, 210))
+
+        # White main text
         draw.text((x, y_cursor), line, font=font, fill=(255, 255, 255, 255))
         y_cursor += line_heights[i] + _LINE_SPACING
 
@@ -143,18 +135,22 @@ async def generate_thumbnail(db, video_id: int) -> str:
 
         concept = video.concept or {}
         thumbnail_concept = concept.get(
-            "thumbnail_concept", "beautiful nature scene"
+            "thumbnail_concept", "extreme macro water droplet on leaf at golden hour"
         )
-        title = video.title or "Untitled"
+        title = video.title or concept.get("title") or "Video"
 
         client = openai.AsyncOpenAI(api_key=openai_api_key)
 
         dalle_prompt = (
-            f"Cinematic, photorealistic thumbnail for YouTube: {thumbnail_concept}. "
-            "Ultra high detail, soft natural lighting, 4K quality. "
-            "No text, no watermarks, no logos. "
-            "Composition: rule of thirds, high contrast, visually striking. "
-            "Style: National Geographic quality nature photography."
+            f"National Geographic award-winning nature photograph: {thumbnail_concept}. "
+            "Shot on Phase One IQ4 150MP medium format camera. "
+            "Ultra-sharp focus, razor-thin depth of field. "
+            "Dominant subject fills 60% of frame. "
+            "Dramatic cinematic lighting — golden hour, blue hour, or single directional key light. "
+            "Colors: deeply saturated, rich contrast, micro-textures visible at pixel level. "
+            "Composition: extreme macro OR ultra-wide landscape, rule of thirds. "
+            "Mood: awe-inspiring, otherworldly, scroll-stopping. "
+            "Absolutely no text, no watermarks, no logos, no people."
         )
 
         response = await client.images.generate(

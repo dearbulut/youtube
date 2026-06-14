@@ -16,6 +16,28 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CLIP_COST = 0.045  # USD per 10-second clip
 
+
+async def _add_ambient_audio(input_path: str, output_path: str) -> None:
+    """Mixes brown noise at -15dB into the video's audio track via FFmpeg."""
+    proc = await asyncio.create_subprocess_exec(
+        "ffmpeg", "-y",
+        "-i", input_path,
+        "-f", "lavfi", "-i", "anoisesrc=c=brown:r=44100,aresample=44100",
+        "-filter_complex", "[1:a]volume=0.3[noise];[0:a][noise]amix=inputs=2:duration=first[a]",
+        "-map", "0:v",
+        "-map", "[a]",
+        "-c:v", "copy",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-shortest",
+        output_path,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise RuntimeError(f"FFmpeg audio injection failed: {stderr.decode()[-500:]}")
+
 LONG_VIDEO_LIGHT_SUFFIXES = [
     " morning light",
     " afternoon golden light",
@@ -139,7 +161,16 @@ async def _produce_short(db, video: Video, concept: dict) -> None:
             except OSError:
                 pass
 
-        video.video_path = looped_path
+        # Inject ambient brown noise audio
+        audio_path = get_temp_path(f"short_audio_{video.id}.mp4")
+        await _add_ambient_audio(looped_path, audio_path)
+        if os.path.exists(looped_path):
+            try:
+                os.remove(looped_path)
+            except OSError:
+                pass
+
+        video.video_path = audio_path
         video.duration_seconds = 50
         video.cost_usd = (video.cost_usd or 0.0) + clip_cost
         video.status = "video_ready"
