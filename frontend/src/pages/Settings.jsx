@@ -44,11 +44,14 @@ export default function Settings() {
     queryFn: () => api.getSettings().then((r) => r.data),
   });
 
-  const { data: ytStats } = useQuery({
+  const { data: a } = useQuery({
     queryKey: ["youtube-stats"],
     queryFn: () => api.getYouTubeStats().then((r) => r.data),
     retry: false,
+    refetchOnMount: true,
+    staleTime: 0,
   });
+  const isConnected = a?.connected || a?.authenticated || !!a?.channel_name;
 
   const { data: dashStats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -415,24 +418,24 @@ export default function Settings() {
       {/* Tab: YouTube */}
       {activeTab === "youtube" && (
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
-          {ytStats?.connected ? (
+          {isConnected ? (
             <>
               {/* Connected state */}
               <div className="flex items-center gap-4">
-                {ytStats.channel_avatar && (
+                {(a?.channel_avatar || a?.thumbnail) && (
                   <img
-                    src={ytStats.channel_avatar}
+                    src={a.channel_avatar || a.thumbnail}
                     alt="Channel avatar"
                     className="w-16 h-16 rounded-full"
                   />
                 )}
                 <div>
                   <div className="text-lg font-semibold text-white">
-                    {ytStats.channel_name ?? "Your Channel"}
+                    {a?.channel_name ?? "Your Channel"}
                   </div>
                   <div className="text-sm text-gray-400">
-                    {ytStats.subscriber_count != null
-                      ? `${ytStats.subscriber_count.toLocaleString()} subscribers`
+                    {a?.subscriber_count != null
+                      ? `${a.subscriber_count.toLocaleString()} subscribers`
                       : ""}
                   </div>
                   <div className="mt-1 flex items-center gap-1.5">
@@ -443,11 +446,11 @@ export default function Settings() {
               </div>
 
               {/* OAuth scopes */}
-              {ytStats.scopes?.length > 0 && (
+              {a?.scopes?.length > 0 && (
                 <div>
                   <div className="text-sm font-medium text-gray-300 mb-2">Granted permissions</div>
                   <ul className="space-y-1">
-                    {ytStats.scopes.map((scope) => (
+                    {a.scopes.map((scope) => (
                       <li key={scope} className="text-xs text-gray-400 font-mono bg-gray-800 px-2 py-1 rounded">
                         {scope}
                       </li>

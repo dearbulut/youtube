@@ -62,6 +62,7 @@ export const api = {
   getViewsChart: () => axiosInstance.get("/stats/views-chart"),
   getCostBreakdown: () => axiosInstance.get("/stats/cost-breakdown"),
   getYouTubeStats: () => axiosInstance.get("/stats/youtube"),
+  getOptimizationStats: () => axiosInstance.get("/stats/optimization"),
 
   // YouTube
   getYouTubeQuota: () => axiosInstance.get("/youtube/quota"),

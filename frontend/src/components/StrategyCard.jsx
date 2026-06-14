@@ -121,20 +121,9 @@ function SlideOver({ open, onClose, reports }) {
 export default function StrategyCard({ settings }) {
   const [showHistory, setShowHistory] = useState(false);
 
-  const optimizationQuery = useQuery({
-    queryKey: ["optimization"],
-    queryFn: () => api.getDashboardStats()
-      .then(() => fetch("/stats/optimization").then((r) => r.json()))
-      .catch(() => ({ reports: [], next_run: null })),
-    // Use the dedicated api method once wired up
-    staleTime: 5 * 60 * 1000,
-  });
-
   const { data: optData } = useQuery({
     queryKey: ["optimization-data"],
-    queryFn: () =>
-      fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/stats/optimization`)
-        .then((r) => r.json()),
+    queryFn: () => api.getOptimizationStats().then((r) => r.data),
     staleTime: 5 * 60 * 1000,
   });
 
