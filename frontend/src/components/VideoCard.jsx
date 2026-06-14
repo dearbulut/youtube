@@ -1,7 +1,5 @@
 import React from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
 function formatDuration(seconds) {
   if (!seconds && seconds !== 0) return "--:--";
   const m = Math.floor(seconds / 60);
@@ -64,7 +62,7 @@ export default function VideoCard({ video, onClick, onRetry, onDelete }) {
 
   const thumbnailFilename = thumbnail_path ? thumbnail_path.split("/").pop() : null;
   const thumbnailSrc = thumbnailFilename
-    ? `${API_BASE}/thumbnails/${thumbnailFilename}`
+    ? `/api/storage/thumbnails/${thumbnailFilename}`
     : null;
 
   const displayDate = uploaded_at || created_at;

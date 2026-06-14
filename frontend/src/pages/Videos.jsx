@@ -75,7 +75,7 @@ function stepIcon(status) {
 
 function VideoCard({ video, onClick }) {
   const thumbnailUrl = video.thumbnail_path
-    ? `/storage/thumbnails/${video.thumbnail_path.split("/").pop()}`
+    ? `/api/storage/thumbnails/${video.thumbnail_path.split("/").pop()}`
     : null;
 
   return (
@@ -253,7 +253,7 @@ function SlideOver({ video, onClose }) {
   if (!video) return null;
 
   const thumbnailUrl = video.thumbnail_path
-    ? `/storage/thumbnails/${video.thumbnail_path.split("/").pop()}`
+    ? `/api/storage/thumbnails/${video.thumbnail_path.split("/").pop()}`
     : null;
 
   return (

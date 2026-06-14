@@ -74,12 +74,14 @@ def _try_reschedule():
         pass
 
 
+@router.get("")
 @router.get("/")
 def get_settings(db: Session = Depends(get_db)):
     s = get_or_create_settings(db)
     return _settings_to_dict(s)
 
 
+@router.put("")
 @router.put("/")
 def update_settings(body: Dict[str, Any], db: Session = Depends(get_db)):
     s = get_or_create_settings(db)

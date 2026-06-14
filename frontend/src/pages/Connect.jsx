@@ -24,19 +24,8 @@ export default function Connect() {
     }
   }, [authStatus, navigate]);
 
-  const handleConnect = async () => {
-    try {
-      const res = await api.login();
-      const url =
-        res?.data?.auth_url ??
-        res?.data?.url ??
-        res?.request?.responseURL;
-      if (url) {
-        window.location.href = url;
-      }
-    } catch {
-      // Axios may follow the redirect automatically; no action needed
-    }
+  const handleConnect = () => {
+    window.location.href = "/api/auth/login";
   };
 
   if (isLoading) {

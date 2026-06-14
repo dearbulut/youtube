@@ -9,6 +9,7 @@ from models.settings import get_or_create_settings
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+@router.get("")
 @router.get("/")
 def list_jobs(db: Session = Depends(get_db)):
     jobs = (

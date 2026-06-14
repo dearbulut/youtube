@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 30000,
 });
 
@@ -25,6 +25,11 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+function testBody(key) {
+  if (!key || key.startsWith("•")) return {};
+  return { api_key: key };
+}
+
 export const api = {
   // App auth
   getAppStatus: () => axiosInstance.get("/auth/app-status"),
@@ -46,16 +51,16 @@ export const api = {
   triggerLong: () => axiosInstance.post("/videos/trigger/long"),
 
   // Jobs
-  getJobs: () => axiosInstance.get("/jobs"),
+  getJobs: (params) => axiosInstance.get("/jobs", { params }),
   getJobLogs: (id) => axiosInstance.get(`/jobs/${id}/logs`),
 
   // Settings
   getSettings: () => axiosInstance.get("/settings"),
   updateSettings: (data) => axiosInstance.put("/settings", data),
-  testAnthropicKey: () => axiosInstance.post("/settings/test/anthropic"),
-  testOpenAIKey: () => axiosInstance.post("/settings/test/openai"),
-  testFalKey: () => axiosInstance.post("/settings/test/fal"),
-  testApiframeKey: () => axiosInstance.post("/settings/test/apiframe"),
+  testAnthropicKey: (key) => axiosInstance.post("/settings/test/anthropic", testBody(key)),
+  testOpenAIKey: (key) => axiosInstance.post("/settings/test/openai", testBody(key)),
+  testFalKey: (key) => axiosInstance.post("/settings/test/fal", testBody(key)),
+  testApiframeKey: (key) => axiosInstance.post("/settings/test/apiframe", testBody(key)),
 
   // Stats
   getDashboardStats: () => axiosInstance.get("/stats/dashboard"),
@@ -63,6 +68,7 @@ export const api = {
   getCostBreakdown: () => axiosInstance.get("/stats/cost-breakdown"),
   getYouTubeStats: () => axiosInstance.get("/stats/youtube"),
   getOptimizationStats: () => axiosInstance.get("/stats/optimization"),
+  updateDashboardStats: (data) => axiosInstance.post("/stats/dashboard", data),
 
   // YouTube
   getYouTubeQuota: () => axiosInstance.get("/youtube/quota"),

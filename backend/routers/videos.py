@@ -42,6 +42,7 @@ def job_to_dict(job: Job) -> dict:
     }
 
 
+@router.get("")
 @router.get("/")
 def list_videos(
     page: int = 1,

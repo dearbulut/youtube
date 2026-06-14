@@ -29,10 +29,10 @@ const KEY_STATUSES = {
 };
 
 const API_KEY_FIELDS = [
-  { key: "anthropic_api_key", label: "Anthropic API Key", testFn: () => api.testAnthropicKey() },
-  { key: "openai_api_key", label: "OpenAI API Key", testFn: () => api.testOpenAIKey() },
-  { key: "fal_api_key", label: "fal.ai Key", testFn: () => api.testFalKey() },
-  { key: "apiframe_api_key", label: "Apiframe Key", testFn: () => api.testApiframeKey() },
+  { key: "anthropic_api_key", label: "Anthropic API Key", testFn: (k) => api.testAnthropicKey(k) },
+  { key: "openai_api_key", label: "OpenAI API Key", testFn: (k) => api.testOpenAIKey(k) },
+  { key: "fal_api_key", label: "fal.ai Key", testFn: (k) => api.testFalKey(k) },
+  { key: "apiframe_api_key", label: "Apiframe Key", testFn: (k) => api.testApiframeKey(k) },
 ];
 
 export default function Settings() {
@@ -45,13 +45,20 @@ export default function Settings() {
   });
 
   const { data: a } = useQuery({
-    queryKey: ["youtube-stats"],
-    queryFn: () => api.getYouTubeStats().then((r) => r.data),
+    queryKey: ["auth-status"],
+    queryFn: () => api.getAuthStatus().then((r) => r.data),
     retry: false,
-    refetchOnMount: true,
+    refetchOnMount: "always",
     staleTime: 0,
   });
   const isConnected = a?.connected || a?.authenticated || !!a?.channel_name;
+
+  const { data: ytStats } = useQuery({
+    queryKey: ["youtube-stats"],
+    queryFn: () => api.getYouTubeStats().then((r) => r.data),
+    enabled: isConnected,
+    retry: false,
+  });
 
   const { data: dashStats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -114,7 +121,8 @@ export default function Settings() {
   const handleTestKey = async (field) => {
     setKeyStatuses((s) => ({ ...s, [field.key]: "testing" }));
     try {
-      const res = await field.testFn();
+      const currentKey = keyValues[field.key];
+      const res = await field.testFn(currentKey);
       const valid = res?.data?.valid ?? true;
       setKeyStatuses((s) => ({ ...s, [field.key]: valid ? "valid" : "invalid" }));
     } catch {
@@ -122,14 +130,8 @@ export default function Settings() {
     }
   };
 
-  const handleConnect = async () => {
-    try {
-      const res = await api.login();
-      const url = res?.data?.auth_url ?? res?.request?.responseURL;
-      if (url) window.location.href = url;
-    } catch (e) {
-      // If login itself redirects via axios interceptor, nothing to do
-    }
+  const handleConnect = () => {
+    window.location.href = "/api/auth/login";
   };
 
   const TABS = [
@@ -434,8 +436,8 @@ export default function Settings() {
                     {a?.channel_name ?? "Your Channel"}
                   </div>
                   <div className="text-sm text-gray-400">
-                    {a?.subscriber_count != null
-                      ? `${a.subscriber_count.toLocaleString()} subscribers`
+                    {(ytStats?.subscribers ?? a?.subscriber_count) != null
+                      ? `${(ytStats?.subscribers ?? a?.subscriber_count).toLocaleString()} subscribers`
                       : ""}
                   </div>
                   <div className="mt-1 flex items-center gap-1.5">
@@ -461,7 +463,12 @@ export default function Settings() {
 
               {/* Disconnect */}
               <button
-                onClick={() => api.logout().then(() => queryClient.invalidateQueries())}
+                onClick={() =>
+                  api.logout().then(() => {
+                    queryClient.invalidateQueries({ queryKey: ["auth-status"] });
+                    queryClient.invalidateQueries({ queryKey: ["youtube-stats"] });
+                  })
+                }
                 className="px-4 py-2 bg-red-900/40 hover:bg-red-800/60 border border-red-800 text-red-400 text-sm font-medium rounded-lg transition-colors"
               >
                 Disconnect Channel
