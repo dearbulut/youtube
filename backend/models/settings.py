@@ -33,6 +33,7 @@ class UserSettings(Base):
     youtube_quota_used = Column(Integer, default=0)
     youtube_quota_date = Column(String, nullable=True)  # YYYY-MM-DD
     manual_override = Column(Boolean, default=False)
+    app_password_hash = Column(String, nullable=True)
 
 
 def get_or_create_settings(db: Session) -> UserSettings:

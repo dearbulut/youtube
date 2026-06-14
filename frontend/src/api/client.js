@@ -5,18 +5,33 @@ const axiosInstance = axios.create({
   timeout: 30000,
 });
 
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("tubeauto_token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      window.location.href = "/connect";
+    if (
+      error.response?.status === 401 &&
+      window.location.pathname !== "/login"
+    ) {
+      localStorage.removeItem("tubeauto_token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
 );
 
 export const api = {
-  // Auth
+  // App auth
+  getAppStatus: () => axiosInstance.get("/auth/app-status"),
+  appLogin: (password) => axiosInstance.post("/auth/app-login", { password }),
+  appLogout: () => axiosInstance.post("/auth/app-logout"),
+
+  // Google OAuth
   getAuthStatus: () => axiosInstance.get("/auth/status"),
   login: () => axiosInstance.get("/auth/login"),
   logout: () => axiosInstance.post("/auth/logout"),

@@ -31,6 +31,7 @@ def _migrate_columns():
 
     migrations = [
         ("user_settings", "manual_override", "BOOLEAN DEFAULT 0"),
+        ("user_settings", "app_password_hash", "VARCHAR"),
         ("videos", "niche_theme", "VARCHAR"),
     ]
     with engine.connect() as conn:

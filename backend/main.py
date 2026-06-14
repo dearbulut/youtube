@@ -1,11 +1,12 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from database import create_tables
 from routers import auth, videos, jobs, settings as settings_router, stats, youtube
+from routers.auth import require_app_auth
 from scheduler import start_scheduler, stop_scheduler
 from config import settings
 
@@ -34,12 +35,14 @@ async def shutdown_event():
     stop_scheduler()
 
 
-app.include_router(auth.router)
-app.include_router(videos.router)
-app.include_router(jobs.router)
-app.include_router(settings_router.router)
-app.include_router(stats.router)
-app.include_router(youtube.router)
+_auth_dep = [Depends(require_app_auth)]
+
+app.include_router(auth.router)  # public — contains login/status/callback
+app.include_router(videos.router, dependencies=_auth_dep)
+app.include_router(jobs.router, dependencies=_auth_dep)
+app.include_router(settings_router.router, dependencies=_auth_dep)
+app.include_router(stats.router, dependencies=_auth_dep)
+app.include_router(youtube.router, dependencies=_auth_dep)
 
 app.mount(
     "/storage/thumbnails",

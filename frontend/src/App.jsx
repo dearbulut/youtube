@@ -1,9 +1,11 @@
-import { Routes, Route, Navigate, NavLink } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard.jsx";
 import Videos from "./pages/Videos.jsx";
 import Schedule from "./pages/Schedule.jsx";
 import Settings from "./pages/Settings.jsx";
 import Connect from "./pages/Connect.jsx";
+import Login from "./pages/Login.jsx";
+import { api } from "./api/client";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: "📊", end: true },
@@ -12,7 +14,25 @@ const navItems = [
   { to: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
-export default function App() {
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("tubeauto_token");
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function Layout() {
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    try {
+      await api.appLogout();
+    } catch {
+      // ignore
+    }
+    localStorage.removeItem("tubeauto_token");
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="flex min-h-screen">
       <aside className="fixed top-0 left-0 h-full w-56 bg-gray-900 border-r border-gray-800 flex flex-col">
@@ -39,6 +59,15 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
+        <div className="px-4 py-4 border-t border-gray-800">
+          <button
+            onClick={handleSignOut}
+            className="w-full text-left text-sm text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-2 px-1"
+          >
+            <span>↩</span>
+            <span>Sign out</span>
+          </button>
+        </div>
       </aside>
 
       <main className="ml-56 flex-1 p-6">
@@ -52,5 +81,21 @@ export default function App() {
         </Routes>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }
